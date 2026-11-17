@@ -1,0 +1,51 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: expense_tracker
+      MYSQL_USER: expense_user
+      MYSQL_PASSWORD: expense_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - expense_lab6_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  expense-service:
+    build:
+      context: .
+      dockerfile: expense-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/expense_tracker?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: expense_user
+      DB_PASSWORD: expense_password
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: analytics-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - expense-service
+    environment:
+      SERVER_PORT: 8081
+      EXPENSE_SERVICE_URL: http://expense-service:8080
+    ports:
+      - "8081:8081"
+
+volumes:
+  expense_lab6_mysql_data:

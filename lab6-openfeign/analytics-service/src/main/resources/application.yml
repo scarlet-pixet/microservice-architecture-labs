@@ -1,0 +1,25 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+expense-service:
+  url: ${EXPENSE_SERVICE_URL:http://localhost:8080}
+
+spring:
+  application:
+    name: analytics-service
+  cloud:
+    openfeign:
+      client:
+        config:
+          expense-service:
+            connect-timeout: 2000
+            read-timeout: 5000
+            logger-level: basic
+
+logging:
+  level:
+    org.example.analytics.client.ExpenseServiceClient: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
